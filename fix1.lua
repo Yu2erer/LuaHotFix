@@ -43,10 +43,13 @@ function IsGameSvr()
 end
 
 -- 测试热更修改数据
-globalTb.a = 1000
+-- globalTb.a = 1000
 function changeA()
-    print(globalTb.a)
+    if globalTb.a then
+        print("changeA", globalTb.a)
+    end
 end
+
 -- 热更的时候 启用 会自动执行本函数，进行数据修复
 -- function __RELOAD()
 --     globalTb.a = 1000000

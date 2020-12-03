@@ -13,6 +13,7 @@ local realEnv = _ENV
 
 local debug = debug
 local string = string
+local print = print
 
 local getupvalue = debug.getupvalue
 local upvaluejoin = debug.upvaluejoin
@@ -32,7 +33,6 @@ local function ERROR(str, ...)
     print("[ERROR] " .. string.format(str, ...))
 end
 
-local print = DEBUG
 
 -------------------------- FakeEnv --------------------------
 
@@ -157,13 +157,8 @@ local function _updateValue(oldtb, newtb)
         local name = v[1]
         local value = v[2]
 
-        if not oldtb[name] then
-            ERROR("no found %s", name)
-            goto continue
-        end
-
         DEBUG("updateValue %s:%s", name, value)
-        oldtb[name] = value
+        rawset(oldtb, name, value)
         ::continue::
     end
 end
@@ -257,7 +252,6 @@ function HotFix:CheckChunkType(oldChunk, chunk)
         ERROR("call __RELOAD failed")
     end
 
-    setfenv(__reload, nil)
     HotFix:UpdateValue(HotFix.reloadMap)
 end
 
@@ -332,25 +326,21 @@ function HotFix:UpdateFunc(name, oldFunc, newFunc)
     end
     HotFix.funcMark[name] = true
 
-    print("--------------- UpdateFunc ----- -----------------")
-    print("UpdateFunc name:", name)
+    DEBUG("--------------- UpdateFunc ----- -----------------")
+    DEBUG("UpdateFunc name: %s", name)
     HotFix:UpdateUpvalues(oldFunc, newFunc)
     local env = getfenv(oldFunc) or realEnv
     setfenv(newFunc, env)
-    -- if not oldFunc then
-        -- DEBUG("UpdateFunc oldFunc:%s is not exists", name)
-        -- rawset(env, name, newFunc)
-    -- end
-    print("--------------- UpdateFunc END -----------------")
+    DEBUG("--------------- UpdateFunc END -----------------")
 
 end
 
 function HotFix:UpdateUpvalues(oldFunc, newFunc)
     if not oldFunc then
-        print("not OldFUnc")
+        DEBUG("not OldFunc")
         return
     end
-    print("--------------- UpdateUpvalues -----------------")
+    DEBUG("--------------- UpdateUpvalues -----------------")
     -- k: name, v: {index, value}
     local upvalueMap = {}
     -- k: name, v: is exists(boolean)
@@ -404,7 +394,7 @@ function HotFix:UpdateUpvalues(oldFunc, newFunc)
                 upvaluejoin(newFunc, i, oldFunc, oldValueIndex)
             elseif valueType == "function" then
                 HotFix:UpdateFunc(name, oldValue, value)
-                -- print("UpdateFunc ", name, value)
+                DEBUG("UpdateFunc ", name, value)
             elseif valueType == "userdata" or valueType == "thread" then
                 WARN("not support %s, %s", name, valueType)
             else
@@ -425,7 +415,7 @@ function HotFix:UpdateUpvalues(oldFunc, newFunc)
         ::continue::
         i = i + 1
     end
-    -- print("---------------- UpdateUpvalues end-----------------")
+    DEBUG("---------------- UpdateUpvalues end-----------------")
 
 end
 
